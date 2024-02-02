@@ -14,7 +14,7 @@ class Detector:
         :param source_folder: Carpeta donde se encuentran las imágenes RGB.
         :param coords_folder: Carpeta donde se guardarán las coordenadas detectadas.
         """
-        self.model = YOLO("Poo Code/ModeloDeteccion/best.pt")
+        self.model = YOLO("Codigo-Tesis/Poo Code/ModeloDeteccion/best.pt")
         self.source_folder = source_folder
         self.coords_folder = coords_folder
 

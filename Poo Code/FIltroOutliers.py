@@ -6,7 +6,7 @@ class FiltroOutliers:
     Clase para eliminar outliers de una nube de puntos utilizando Open3D.
     """
 
-    def __init__(self, nb_neighbors=20, std_ratio=2.0):
+    def __init__(self, nb_neighbors=20, std_ratio=0.5):
         """
         Inicializa el FiltroOutliers con los parámetros para la eliminación de outliers.
 

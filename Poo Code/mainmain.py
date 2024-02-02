@@ -42,7 +42,7 @@ def convertir_coordenadas_en_carpeta(images_folder, ply_folder, coords_folder, o
     print("Coordenadas convertidas---------------------------------")
 
 
-
+#
 
 #Funcion para checar en la carpeta de coordenadas convertidas si hay archivos y buscar los que tengan el mismo numero de frame que el ply en la carpeta de ply
 def checar_archivos_en_carpeta_de_coordenadas_convertidas(ply_folder, coords_folder):
@@ -53,9 +53,8 @@ def checar_archivos_en_carpeta_de_coordenadas_convertidas(ply_folder, coords_fol
     return [f for f in ply_frame_numbers if f in coords_frame_numbers]
 
 #Funcion para aplicar Ransac a las nubes de puntos que se regresen de la funcion de checar_archivos_en_carpeta_de_coordenadas_convertidas
-def aplicar_ransac_a_nubes_de_puntos(ply_folder, coords_folder, frame_numbers):
+def aplicar_ransac_a_nubes_de_puntos(folder_bag, ply_folder, coords_folder, frame_numbers):
     ransac = RANSAC()  # Asume configuración interna adecuada
-    # iterar sobre los frames numbers que coinciden en ambas carpetas
     for frame_number in frame_numbers: 
         ply_path = os.path.join(ply_folder, f'frame_{frame_number}.ply')
         coords_path = os.path.join(coords_folder, f'output_frame_{frame_number}.json')
@@ -63,20 +62,21 @@ def aplicar_ransac_a_nubes_de_puntos(ply_folder, coords_folder, frame_numbers):
         pcd_terreno, plano = ransac.segmentar_terreno(pcd)
         transformacion = ransac.nivelar_puntos(plano)
         pcd_nivelada = pcd.transform(transformacion)
-        estimacion_de_superficie = EstimacionDeSuperficie(pcd_nivelada)
-        superficie_estimada = estimacion_de_superficie.estimar_superficie_de_nube_precargada(pcd_nivelada)
-        # Paso 3: Filtrar la nube de puntos para mantener solo los puntos de la detección
         pointCloudFilter = PointCloudFilter()
         pointCloudFilter.load_roi_data(coords_path)
         pcd_filtrada = pointCloudFilter.filter_points_in_roi(pcd_nivelada)
-        # Paso 4: Eliminar outliers dentro de la zona de detección
         filtroOutliers = FiltroOutliers(nb_neighbors=500, std_ratio=0.5)
         pcd_final = filtroOutliers.eliminar_outliers(pcd_filtrada)
-        #paso 5 aplicar estimacion de profundidad del bache apartir del punto mas bajo en el eje z de la nube de puntos procesada y la estimacion de superficie
-        estimacion_profundidad = EstimacionProfundidad(pcd_final, superficie_estimada)
-        estimacion_profundidad = estimacion_profundidad.estimar_profundidad_bache()
+        # Guardar la nube de puntos procesada
+        guardar_nube_de_puntos_procesada(pcd_final, folder_bag, frame_number)
+        estimacion_profundidad, punto_mas_profundo = EstimacionProfundidad(pcd_final).estimar_profundidad_bache()
         print(f"La profundidad del bache estimada en metros es: {estimacion_profundidad}, en el frame {frame_number} de la nube de puntos {ply_path} y las coordenadas {coords_path}")
 
+def guardar_nube_de_puntos_procesada(pcd_final, folder_bag, frame_number):
+    ply_procesados_folder = os.path.join('ProcesamientoDeBags', folder_bag, 'PlyProcesados')
+    os.makedirs(ply_procesados_folder, exist_ok=True)
+    output_path = os.path.join(ply_procesados_folder, f'frame_{frame_number}_procesada.ply')
+    o3d.io.write_point_cloud(output_path, pcd_final)
 
 #SECCION DE FILTROS DE PROCESAMIENTO
     
