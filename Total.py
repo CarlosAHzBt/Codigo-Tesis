@@ -38,19 +38,19 @@ if gpus:
 with strategy.scope():
     # Carga el modelo de Keras y las etiquetas
     print("[INFO] Cargando el modelo...")
-    model_path = "TiempoReal/Modelos/Bache v2/keras_model.h5"
+    model_path = r"E:\PuntoMinimo\TiempoReal\Modelos\Bache v1\keras_model.h5"
     model = keras.models.load_model(model_path)
 
-    labels_path = "TiempoReal/Modelos/Bache v2/labels.txt"
+    labels_path = r"E:\PuntoMinimo\TiempoReal\Modelos\Bache v1\labels.txt"
     with open(labels_path, 'r') as file:
         labels = [line.strip() for line in file.readlines()]
 
     # Define la carpeta donde se encuentran los archivos .bag
-    bag_files_folder = 'BagPrueba'
+    bag_files_folder = 'bags'
     bag_files = glob.glob(os.path.join(bag_files_folder, '*.bag'))
     base_folder = 'Datos_Extraccion_Prueba'
 
-    # Función para realizar la detección
+    # Función para realizar la clasificacion
     def detect_image(image, model, labels):
         input_image = cv2.resize(image, (224, 224))
         input_image = input_image.astype('float32')
