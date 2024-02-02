@@ -52,7 +52,7 @@ with strategy.scope():
 
     # Función para realizar la clasificacion
     def detect_image(image, model, labels):
-        input_image = cv2.resize(image, (224, 224))
+        input_image = cv2.resize(image, (864, 512))
         input_image = input_image.astype('float32')
         input_image /= 255
         input_image = np.expand_dims(input_image, axis=0)
