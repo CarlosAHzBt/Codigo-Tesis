@@ -55,23 +55,27 @@ def checar_archivos_en_carpeta_de_coordenadas_convertidas(ply_folder, coords_fol
 #Funcion para aplicar Ransac a las nubes de puntos que se regresen de la funcion de checar_archivos_en_carpeta_de_coordenadas_convertidas
 def aplicar_ransac_a_nubes_de_puntos(folder_bag, ply_folder, coords_folder, frame_numbers):
     ransac = RANSAC()  # Asume configuración interna adecuada
-    for frame_number in frame_numbers: 
-        ply_path = os.path.join(ply_folder, f'frame_{frame_number}.ply')
-        coords_path = os.path.join(coords_folder, f'output_frame_{frame_number}.json')
-        pcd = ransac.cargar_ply(ply_path)
-        pcd_terreno, plano = ransac.segmentar_terreno(pcd)
-        transformacion = ransac.nivelar_puntos(plano)
-        pcd_nivelada = pcd.transform(transformacion)
-        pointCloudFilter = PointCloudFilter()
-        pointCloudFilter.load_roi_data(coords_path)
-        pcd_filtrada = pointCloudFilter.filter_points_in_roi(pcd_nivelada)
-        filtroOutliers = FiltroOutliers(nb_neighbors=500, std_ratio=0.5)
-        pcd_final = filtroOutliers.eliminar_outliers(pcd_filtrada)
-        # Guardar la nube de puntos procesada
-        guardar_nube_de_puntos_procesada(pcd_final, folder_bag, frame_number)
-        estimacion_profundidad, punto_mas_profundo = EstimacionProfundidad(pcd_final).estimar_profundidad_bache()
-        print(f"La profundidad del bache estimada en metros es: {estimacion_profundidad}, en el frame {frame_number} de la nube de puntos {ply_path} y las coordenadas {coords_path}")
-
+    try:
+        for frame_number in frame_numbers: 
+            ply_path = os.path.join(ply_folder, f'frame_{frame_number}.ply')
+            coords_path = os.path.join(coords_folder, f'output_frame_{frame_number}.json')
+            pcd = ransac.cargar_ply(ply_path)
+            pcd_terreno, plano = ransac.segmentar_terreno(pcd)
+            transformacion = ransac.nivelar_puntos(plano)
+            pcd_nivelada = pcd.transform(transformacion)
+            estimacion = EstimacionDeSuperficie(pcd_nivelada)
+            superficie_estimada = estimacion.estimar_superficie_de_nube_precargada(pcd_nivelada)
+            pointCloudFilter = PointCloudFilter()
+            pointCloudFilter.load_roi_data(coords_path)
+            pcd_filtrada = pointCloudFilter.filter_points_in_roi(pcd_nivelada)
+            filtroOutliers = FiltroOutliers(nb_neighbors=500, std_ratio=0.5)
+            pcd_final = filtroOutliers.eliminar_outliers(pcd_filtrada)
+            # Guardar la nube de puntos procesada
+            guardar_nube_de_puntos_procesada(pcd_final, folder_bag, frame_number)
+            estimacion_profundidad, punto_mas_profundo = EstimacionProfundidad(pcd_final,superficie_estimada).estimar_profundidad_bache()
+            print(f"La profundidad del bache estimada en metros es: {estimacion_profundidad}, en el frame {frame_number} de la nube de puntos {ply_path} y las coordenadas {coords_path}")
+    except Exception as e:
+        print(f"No hay detecciones en este archivo: {e}")
 def guardar_nube_de_puntos_procesada(pcd_final, folder_bag, frame_number):
     ply_procesados_folder = os.path.join('ProcesamientoDeBags', folder_bag, 'PlyProcesados')
     os.makedirs(ply_procesados_folder, exist_ok=True)
@@ -130,8 +134,14 @@ def principal():
         print("Termine de convertir coordenadas---------------------------------")
         #Revisar que archivos hay en la carpeta de coordenadas convertidas y aplicar ransac a las nubes de puntos que si tienen correspondiente en la carpeta de ply
         frame_numbers = checar_archivos_en_carpeta_de_coordenadas_convertidas(ply_folder, output_folder)
-        aplicar_ransac_a_nubes_de_puntos(ply_folder, output_folder, frame_numbers)
-
+        if len(frame_numbers) == 0:       #Si la longitud de frame_numbers = 0, no hay archivos en la carpeta de coordenadas convertidas
+            print("No hay archivos en la carpeta de coordenadas convertidas")
+            continue
+        else:
+            try:
+                aplicar_ransac_a_nubes_de_puntos(folder,ply_folder, output_folder, frame_numbers)
+            except Exception as e:
+                print(f"Error al aplicar RANSAC: {e}")
         print("Termine Un BAG")
 
     print("Ya Acabe")

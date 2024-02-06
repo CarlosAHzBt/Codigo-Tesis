@@ -70,7 +70,7 @@ class BagFile:
         Guarda la imagen RGB de un frame específico.
         """
         color_image = np.asanyarray(color_frame.get_data())
-        color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+        color_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGBA)
         cv2.imwrite(f'{self.images_folder}/frame_{frame_number:05d}.png', color_image)
 
     def save_depth_frame_as_ply(self, color_frame, depth_frame, frame_number):
